@@ -8,8 +8,12 @@ export default class Feed implements Iterable<FeedItem> {
     private _feed: FeedItem[] = []
     private _url: URL
 
-    constructor (url: URL) {
-        this._url = url
+    constructor (url: URL | string) {
+        if (typeof url === 'string') {
+            this._url = new URL(url)
+        } else {
+            this._url = url
+        }
     }
 
     public [Symbol.iterator](): Iterator<FeedItem> {

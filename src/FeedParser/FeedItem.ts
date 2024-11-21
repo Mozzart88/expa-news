@@ -84,14 +84,14 @@ export default class FeedItem {
     }
 
     private setDate(data: string) {
-        const pattern = /<pubdate><(.*?)><\/pubdate>/i
+        const pattern = /<pubdate>(.*?)<\/pubdate>/i
         const res = data.match(pattern)
 
         if (!res || res.length !== 2) {
             throw new Error('Date is mandatory')
         }
-        let clean = res[1].replace(/^<!CDATA\[\[/, '')
-        clean = clean.replace(/\]\]$/, '')
+        let clean = res[1].replace(/^<!\[CDATA\[/, '')
+        clean = clean.replace(/\]\]>$/, '')
         if (clean.length === 0) {
             throw new Error('Date can\'t be empty')
         }
