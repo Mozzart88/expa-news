@@ -24,7 +24,7 @@ export default class ItemEnclosure {
     }
 
     private setURL(data: string) {
-        const pattern = /url="(http[s]?:\/\/[\/&$:?!=\.;-_a-z0-9]+)"/i
+        const pattern = /url="(http[s]?:\/\/.+?)"/i
         const res = data.match(pattern)
 
         if (!res || res.length !== 2 || res[1].length === 0) {

@@ -31,6 +31,14 @@ export default class Feed implements Iterable<FeedItem> {
         }
     }
 
+    public get ttl(): number {
+        return this._ttl
+    }
+
+    public get length(): number {
+        return this._feed.length
+    }
+
     public get latest(): FeedItem {
         const lastIndex = this._feed.length - 1
         return this._feed.toSorted((a, b) => {
@@ -76,12 +84,22 @@ export default class Feed implements Iterable<FeedItem> {
     
     private async getData(url: URL): Promise<string> {
         return new Promise((resolve, reject) => {
-            https.get(url, (res) => {
+            https.get(url, {
+                'headers': {
+                    'user-agent': 'curl/7.68.0'
+                }
+            }, (res) => {
+                let data: Buffer[] = []
                 if (res.statusCode != 200) {
                     throw new Error(`status code: ${res.statusCode}`)
                 }
-                res.on('data', (data) => {
-                    resolve(data)
+                res.on('data', (chunk) => {
+                    data.push(chunk)
+                })
+                res.on('end', () => {
+                    const buff = Buffer.concat(data)
+                    const res = buff.toString('utf-8')
+                    resolve(res)
                 })
             }).on('error', (error) => { reject(error) })
         })
@@ -92,10 +110,15 @@ export default class Feed implements Iterable<FeedItem> {
         const itemsRaw = data.matchAll(/<item>.*?<\/item>/gs)
         let feed: FeedItem[] = []
         for (const raw of itemsRaw) {
-            feed.push(new FeedItem(raw[0]))
+            try {
+                feed.push(new FeedItem(raw[0]))
+            } catch (err) {
+                console.error('fail to create FeedItem: ', err)
+            }
+            
         }
-        const ttlValue = data.match(/<ttl>[\d]+<\/ttl>/)
-        const ttl = ttlValue ? parseInt(ttlValue[0]) : 15
+        const ttlValue = data.match(/<ttl>([\d]+)<\/ttl>/)
+        const ttl = ttlValue ? parseInt(ttlValue[1]) : 15
         return {ttl: ttl ? ttl : 15, feed: feed}
     }
 

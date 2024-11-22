@@ -43,6 +43,10 @@ export default class FeedItem {
         return this._enclosure
     }
 
+    public toString(): string {
+        return `${this.title} at ${this.timestamp}\n${this.link}\n${this.description ?? ''}\n\n${this.content ?? ''}`
+    }
+
     private parse(data: string) {
         this.setTitle(data)
         this.setLink(data)
@@ -51,6 +55,7 @@ export default class FeedItem {
         this.setDescription(data)
         this.setContent(data)
         this.setEnclosure(data)
+        // "<item>\t\t\t<title>Rafael Bielsa y Eduardo Valdés</title>\t\t\t<link>https://www.lapoliticaonline.com/columnas/rafael-bielsa-y-eduardo-valdes/</link>\t\t\t<guid isPermaLink=\"false\">39d196e0c1e914111253b7bff8e5b3bf</guid>\t\t\t<pubDate><![CDATA[]]></pubDate>\t\t\t<description>Rafael Bielsa fue canciller argentino entre 2003 y 2005. Eduardo Valdés es diputado nacional desde 2019.</description><enclosure url=\"https://www.lapoliticaonline.com/files/image/51/51371/5b6b07379e520_800_!.jpg?s=709d50e52e7b168bd43390843dabc10f&amp;d=1731985200\" type=\"image/jpeg\" length=\"0\"/>\t\t</item>"
     }
 
     private setTitle(data: string) {
