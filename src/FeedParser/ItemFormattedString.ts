@@ -28,8 +28,10 @@ abstract class ItemFormattedString {
             case 'md':
                 throw new Error('Format not implemented yet')
             case 'string':
-                let res = this.data.replaceAll(/<.*?>/, '\n')
-                res = res.replaceAll(/&[a-z]{2,4};>/, '')
+                let res = this.data.replaceAll(/<.*?>/g, '\n')
+                res = res.replaceAll(/&[a-z]{2,5};>/g, '')
+                res = res.replace(/<!\[CDATA\[/, '')
+                res = res.replace(/\]\]>/, '')
                 return res
             default:
                 throw new Error('Invalid format')
