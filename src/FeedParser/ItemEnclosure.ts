@@ -23,6 +23,13 @@ export default class ItemEnclosure {
         return this._length
     }
 
+    public toJSON(): {} {
+        return {
+            url: this.url.toString(),
+            type: this.type
+        }
+    }
+
     private setURL(data: string) {
         const pattern = /url="(http[s]?:\/\/.+?)"/i
         const res = data.match(pattern)

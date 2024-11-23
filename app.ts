@@ -1,4 +1,15 @@
 import Feed from './src/FeedParser/Feed.js'
+import GPTAssistatn from './src/gpt/GPTAssistant.js'
+import { env } from 'node:process'
+
+
+const apiKeys = {
+    openAI: env.OPENAI_KEY
+}
+
+if (Object.keys(apiKeys).some(key => apiKeys[key] === undefined)) {
+    throw new Error('some of API KEYS is undefined')
+}
 
 const urls = [
     'https://www.lapoliticaonline.com/files/rss/ultimasnoticias.xml',
@@ -11,10 +22,18 @@ function printFeed(feed: Feed) {
    }
 }
 
+const gpt = new GPTAssistatn(
+    apiKeys.openAI!,
+    'thread_6uebdNd3qitQbMmxM4WcSOfP'
+)
+
 for(const url of urls) {
     const feed = await new Feed(url).update()
-    console.log(feed.ttl, feed.length)
-    feed.autoUpdate((update) => {
-        console.log('New updates')
-    })
+    const note = feed.latest.toJSON()
+    const msg = await gpt.translate(JSON.stringify(note))
+    
+    break
+    // feed.autoUpdate((update) => {
+    //     console.log('New updates')
+    // })
 }
