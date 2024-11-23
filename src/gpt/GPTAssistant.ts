@@ -82,6 +82,12 @@ type GPTMessageType = {
     metadata: {}
 }
   
+type TranslateResponse = {
+    title: string,
+    content: string,
+    categories: string[]
+}
+
 
 /**
  * @todo: Create Thread and Run
@@ -102,7 +108,7 @@ export default class GPTAssistatn {
         this._thread = thred
     }
 
-    public async translate(content: string): Promise<string | never> {
+    public async translate(content: string): Promise<TranslateResponse | never> {
         return new Promise( async (resolve, reject) => {
             const run = await this.createRun(content)
             const interval = setInterval(async () => {
@@ -123,8 +129,12 @@ export default class GPTAssistatn {
                                 }
                            }
                         }
-                        const text = message.content[0].text?.value ?? 'No text'
-                        resolve(text)
+                        const text = message.content[0].text?.value
+                        if (text === undefined) {
+                            reject(new Error('Text is empty'))
+
+                        }
+                        resolve(JSON.parse(text!) as TranslateResponse)
                         break
                     case 'cancelled':
                     case 'cancelling':
@@ -157,7 +167,8 @@ export default class GPTAssistatn {
             additional_messages: [{
                 role: 'user',
                 content: content,
-            }]
+            }],
+            max_completion_tokens: 500
         }
 
         const res = await this.sendRequest('runs', 'post', data)

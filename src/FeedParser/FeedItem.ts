@@ -2,6 +2,14 @@ import { ItemTitle, ItemDescription, ItemContent } from './ItemFormattedString.j
 import ItemEnclosure from './ItemEnclosure.js'
 import ItemId from './ItemId.js'
 
+type JSONSchema = {
+    title: string,
+    description?: string,
+    content?: string,
+    date: number,
+    link: string
+}
+
 export default class FeedItem {
     private _title: ItemTitle
     private _link: URL
@@ -47,7 +55,7 @@ export default class FeedItem {
         return `${this.title} at ${this.timestamp}\n${this.link}\n${this.description ?? ''}\n\n${this.content ?? ''}`
     }
 
-    public toJSON(): {} {
+    public toJSON(): JSONSchema {
         return {
             title: this.title.text,
             description: this.description?.text,
@@ -55,7 +63,7 @@ export default class FeedItem {
             date: this.timestamp,
             link: this.link.toString(),
             // categories: ,
-            enclosure: this.enclosure?.toJSON() ?? {}
+            // enclosure: this.enclosure?.toJSON() ?? {}
         }
     }
 
