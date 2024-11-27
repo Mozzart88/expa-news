@@ -1,5 +1,6 @@
 import Feed from './src/FeedParser/Feed.js'
-import GPTAssistatn from './src/gpt/GPTAssistant.js'
+import FeedItem, { type JSONSchema as FeedItemJson } from './src/FeedParser/FeedItem.js'
+import GPTAssistatn, { type TranslateResponse } from './src/gpt/GPTAssistant.js'
 import { env } from 'node:process'
 import TGBot from './src/tg/TGBot.js'
 
@@ -22,10 +23,28 @@ const urls = [
     'https://www.pagina12.com.ar/rss/portada'
 ]
 
-function printFeed(feed: Feed) {
+function mkMsg(translate: TranslateResponse, note: FeedItemJson): string {
+    return `*${translate.title}*
+    
+${translate.content}
+
+[Ссылка на публикацию](${note.link})
+
+${ translate.categories.length > 0 ? `#${translate.categories.join(' #')}` : ''}
+    `
+}
+
+async function translateAndSend(note: FeedItem) {
+    const jsont = note.toJSON()
+    const translate = await gpt.translate(JSON.stringify(jsont))
+    const msg = mkMsg(translate, jsont)
+    await tgBot.sendMessage('@expat_news', msg)
+}
+
+async function handler(feed: Feed) {
     for(const note of feed) {
-        console.log(`${note}`)
-   }
+        translateAndSend(note)
+    }
 }
 
 const gpt = new GPTAssistatn(
@@ -35,22 +54,10 @@ const gpt = new GPTAssistatn(
 
 const tgBot = new TGBot(apiKeys.tg!)
 
+
+
 for(const url of urls) {
     const feed = await new Feed(url).update()
-    const note = feed.latest.toJSON()
-    const translate = await gpt.translate(JSON.stringify(note))
-    console.log(translate)
-    const msg = `*${translate.title}*
-    
-${translate.content}
-
-[Ссылка на публикацию](${note.link})
-
-${ translate.categories.length > 0 ? `#${translate.categories.join(' #')}` : ''}
-    `
-    await tgBot.sendMessage('@expat_news', msg)
-    break
-    // feed.autoUpdate((update) => {
-    //     console.log('New updates')
-    // })
+    await translateAndSend(feed.latest)
+    feed.autoUpdate(handler)
 }
