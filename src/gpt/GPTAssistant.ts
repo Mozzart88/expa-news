@@ -1,53 +1,5 @@
 import https from 'node:https'
-
-const RunStates = [
-    'queued',
-    'in_progress',
-    'requires_action',
-    'cancelling',
-    'cancelled',
-    'failed',
-    'completed',
-    'incomplete',
-    'expired'    
-] as const
-type RunStatus = (typeof RunStates)[keyof typeof RunStates]
-
-const RunErrors = [
-    'server_error',
-    'rate_limit_exceeded',
-    'invalid_prompt'
-] as const
-type RunError = (typeof RunErrors)[keyof typeof RunErrors]
-
-type GPTRunType = {
-    id: string,
-    object: string,
-    created_at?: number,
-    assistant_id: string,
-    thread_id: string,
-    status: RunStatus,
-    started_at?: number,
-    expires_at?: number,
-    cancelled_at?: number,
-    failed_at?: number,
-    completed_at?: number,
-    last_error?: RunError,
-    model: string,
-    instructions?: string,
-    tools: {[key: string | symbol]: string}[],
-    metadata: {},
-    incomplete_details?: {},
-    usage: {},
-    temperature: number,
-    top_p: number,
-    max_prompt_tokens: number,
-    max_completion_tokens: number,
-    truncation_strategy: {},
-    response_format: string | {},
-    tool_choice: string | {},
-    parallel_tool_calls: boolean
-}
+import { GPTRunType } from './GPTRun.js'
 
 type GPTMessageType = {
     id: string,
@@ -82,7 +34,7 @@ type GPTMessageType = {
     metadata: {}
 }
   
-type TranslateResponse = {
+export type TranslateResponse = {
     title: string,
     content: string,
     categories: string[]
@@ -96,7 +48,6 @@ type TranslateResponse = {
 
 export default class GPTAssistatn {
     private _key: string
-    // thread_6uebdNd3qitQbMmxM4WcSOfP
     private _thread: string
     private _assistant: string = 'asst_iFrsDw6waBvgHKfACGagvD9K'
 
@@ -112,7 +63,7 @@ export default class GPTAssistatn {
         return new Promise( async (resolve, reject) => {
             const run = await this.createRun(content)
             const interval = setInterval(async () => {
-                const update = await this.getRun(run.id)
+               const update = await this.getRun(run.id)
                 switch (update.status) {
                     case 'completed':
                         clearInterval(interval)
@@ -125,7 +76,7 @@ export default class GPTAssistatn {
                                 reject(new Error('Empty content'))
                             } else {
                                 for ( const ent of message.content ) {
-                                    console.log('Resieved content', ent)
+                                    console.error('Recieved content', ent)
                                 }
                            }
                         }
@@ -136,16 +87,23 @@ export default class GPTAssistatn {
                         }
                         resolve(JSON.parse(text!) as TranslateResponse)
                         break
+                    case 'incomplete':
+                        clearInterval(interval)
+                        reject(`GPTRun: ${update.status} - ${update.incomplete_details}`)
+                        break
                     case 'cancelled':
                     case 'cancelling':
                     case 'expired':
-                    case 'failed':
-                    case 'incomplete':
                     case 'requires_action':
                         clearInterval(interval)
-                        reject(new Error(`GPTRun: Ivalid state - ${update.status}`))
+                        reject(`GPTRun: Ivalid state - ${update.status}`)
+                        break
+                    case 'failed':
+                        console.error(update.status, update.last_error)
+                        clearInterval(interval)
+                        reject(`GPTRun: ${update.status} - ${update.last_error}`)
                 }
-            }, 1000)
+             }, 1000)
 
         })
     }
@@ -164,15 +122,25 @@ export default class GPTAssistatn {
     private async createRun(content: string): Promise<GPTRunType | never> {
         const data = {
             assistant_id: this._assistant,
-            additional_messages: [{
-                role: 'user',
-                content: content,
-            }],
-            max_completion_tokens: 500
+            max_completion_tokens: 1000,
+            additional_messages: [
+                {
+                    role: 'user',
+                    content
+                }
+            ]
         }
-
         const res = await this.sendRequest('runs', 'post', data)
         return JSON.parse(res) as GPTRunType
+    }
+
+    private async sendMessage(content: string): Promise<GPTMessageType | never> {
+        const data = {
+            role: 'user',
+            content: content
+        }
+        const res = await this.sendRequest('messages', 'post', data)
+        return JSON.parse(res) as GPTMessageType
     }
 
     private async sendRequest(method: string, httpMethod: string, postData?: any, params?: {[key: string]: string}): Promise<string> {

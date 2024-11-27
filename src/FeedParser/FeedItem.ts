@@ -2,11 +2,10 @@ import { ItemTitle, ItemDescription, ItemContent } from './ItemFormattedString.j
 import ItemEnclosure from './ItemEnclosure.js'
 import ItemId from './ItemId.js'
 
-type JSONSchema = {
+export type JSONSchema = {
     title: string,
     description?: string,
     content?: string,
-    date: number,
     link: string
 }
 
@@ -60,10 +59,7 @@ export default class FeedItem {
             title: this.title.text,
             description: this.description?.text,
             content: this.content?.text,
-            date: this.timestamp,
             link: this.link.toString(),
-            // categories: ,
-            // enclosure: this.enclosure?.toJSON() ?? {}
         }
     }
 

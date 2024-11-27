@@ -1,0 +1,24 @@
+services:
+  dev:
+    image: expat-news:dev
+    build: 
+      target: dev
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      OPENAI_KEY: $OPENAI_KEY
+      TG_BOT_KEY: $TG_BOT_KEY
+    volumes:
+      - ./:/app
+
+  prod:
+    image: expat-news:latest
+    build: 
+      target: prod
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      OPENAI_KEY: $OPENAI_KEY
+      TG_BOT_KEY: $TG_BOT_KEY

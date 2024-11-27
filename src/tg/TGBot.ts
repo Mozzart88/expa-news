@@ -28,7 +28,6 @@ export default class TGBot {
             data: {
                 parse_mode: 'Markdown',
                 text: content,
-                // text: content.replaceAll(/[_*\[\]\(\)~`>#+-=|\{\}\.!]/g, '\\\\$&'),
                 chat_id: chatId
             }
         }
@@ -42,7 +41,7 @@ export default class TGBot {
     }
 
     private async sendRequest(options: RequestOptions): Promise<RequestResult | never> {
-        const url = this._url
+        const url = new URL(this._url)
         url.pathname += options.method
         return new Promise((resolve, reject) => {
             const opts: https.RequestOptions = {
@@ -56,7 +55,6 @@ export default class TGBot {
                 let hasError = false
 
                 if (res.statusCode !== 200) {
-                    console.error(`Network Error: ${res.statusCode} - ${res.statusMessage}`)
                     hasError = true
                 }
 
@@ -78,6 +76,7 @@ export default class TGBot {
             })
             request.write(JSON.stringify(options.data))
             request.end()
+
         })
     }
 }
