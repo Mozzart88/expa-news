@@ -24,13 +24,14 @@ const urls = [
 ]
 
 function mkMsg(translate: TranslateResponse, note: FeedItemJson): string {
+    const categories = translate.categories.map((cat) => cat.replace(' ', '-'))
     return `*${translate.title}*
     
 ${translate.content}
 
 [Ссылка на публикацию](${note.link})
 
-${ translate.categories.length > 0 ? `#${translate.categories.join(' #')}` : ''}
+${ categories.length > 0 ? `#${categories.join(' #')}` : ''}
     `
 }
 
