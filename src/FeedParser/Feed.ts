@@ -7,6 +7,7 @@ export default class Feed implements Iterable<FeedItem> {
     private _lastUpdate: number = 0
     private _feed: FeedItem[] = []
     private _url: URL
+    private _lastBuild: number = 0
 
     constructor (url: URL | string) {
         if (typeof url === 'string') {
@@ -107,15 +108,17 @@ export default class Feed implements Iterable<FeedItem> {
 
     private parse(data: string) {
         this.validate(data)
-        const itemsRaw = data.matchAll(/<item>.*?<\/item>/gs)
+        const lastBuild = this.parseLastBuild(data)
         let feed: FeedItem[] = []
-        for (const raw of itemsRaw) {
-            try {
-                feed.push(new FeedItem(raw[0]))
-            } catch (err) {
-                console.error('fail to create FeedItem: ', err)
+        if (this._lastBuild < lastBuild) {
+            const itemsRaw = data.matchAll(/<item>.*?<\/item>/gs)
+            for (const raw of itemsRaw) {
+                try {
+                    feed.push(new FeedItem(raw[0]))
+                } catch (err) {
+                    console.error('fail to create FeedItem: ', err)
+                }
             }
-            
         }
         const ttlValue = data.match(/<ttl>([\d]+)<\/ttl>/)
         const ttl = ttlValue ? parseInt(ttlValue[1]) : 15
@@ -129,5 +132,16 @@ export default class Feed implements Iterable<FeedItem> {
         if (!data.includes('<rss')) {
             throw new Error('Invalid RSS')
         }
+    }
+
+    private parseLastBuild(data: string): number {
+        const raw = data.match(/<lastBuildDate>(.*?)<\/lastBuildDate>/) ?? data.match(/<pubDate>(.*?)<\/pubDate>/i)
+        if (raw === undefined || raw?.length === 1) {
+            throw new Error('Fail to get lastBuildDate')
+        }
+        const date = raw![1].replace('<![CDATA[', '').replace(']]', '')
+        if (date.length === 0)
+            return Date.now()
+        return Date.parse(date)
     }
 }
