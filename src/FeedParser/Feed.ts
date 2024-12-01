@@ -1,20 +1,39 @@
 import https from 'node:https'
 import FeedItem from "./FeedItem.js"
+import { randomUUID, UUID } from 'node:crypto'
+
+type GPTThreadType = `thread_${string}`
+
+export type FeedOptions = {
+    id?: UUID
+    publisher_name: string
+    rss: string
+    last_access: number
+    last_build: number
+    channels: string[]
+    thread_id: GPTThreadType
+}
 
 export default class Feed implements Iterable<FeedItem> {
 
-    private _ttl: number = 15
-    private _lastUpdate: number = 0
-    private _feed: FeedItem[] = []
+    private _id: UUID
+    private _publisher: string
     private _url: URL
+    private _lastUpdate: number = 0
     private _lastBuild: number = 0
+    private _channels: string[]
+    private _threadId: GPTThreadType
+    private _ttl: number = 15
+    private _feed: FeedItem[] = []
 
-    constructor (url: URL | string) {
-        if (typeof url === 'string') {
-            this._url = new URL(url)
-        } else {
-            this._url = url
-        }
+    constructor (config: FeedOptions) {
+        this._id = config.id ?? randomUUID()
+        this._publisher = config.publisher_name
+        this._url = new URL(config.rss)
+        this._lastUpdate = config.last_access
+        this._lastBuild = config.last_build
+        this._channels = config.channels
+        this._threadId = config.thread_id
     }
 
     public [Symbol.iterator](): Iterator<FeedItem> {
@@ -32,6 +51,10 @@ export default class Feed implements Iterable<FeedItem> {
         }
     }
 
+    public get id(): UUID {
+        return this._id
+    }
+    
     public get ttl(): number {
         return this._ttl
     }
@@ -47,7 +70,19 @@ export default class Feed implements Iterable<FeedItem> {
         })[lastIndex]
     }
 
-    public async update(): Promise<Feed> {
+    public get publisher(): string {
+        return this._publisher
+    }
+
+    public get channels(): string[] {
+        return this._channels
+    }
+
+    public get thread(): GPTThreadType {
+        return this._threadId
+    }
+
+    public async update(handler?: (feed: Feed) => void): Promise<Feed> {
         const data = await this.getData(this._url)
         const {ttl, feed} = this.parse(data)
         this._feed = feed.filter((item) => {
@@ -56,17 +91,28 @@ export default class Feed implements Iterable<FeedItem> {
         })
         this._ttl = ttl
         this._lastUpdate = Date.now()
+        if (handler)
+            handler(this)
         return this
     }
 
     public autoUpdate(handler: (feed: Feed) => void): NodeJS.Timeout {
         return setInterval(() => {
-            this.update()
-            .then((feed) => {
-                handler(feed)
-            })
+            this.update(handler)
             .catch(err => {throw err})
         }, this._ttl * 60 * 1000)
+    }
+
+    public toJSON(): FeedOptions {
+        return {
+            id: this._id,
+            publisher_name: this._publisher,
+            rss: this._url.toString(),
+            last_access: this._lastUpdate,
+            last_build: this._lastBuild,
+            channels: this._channels,
+            thread_id: this._threadId
+        }
     }
 
     /**

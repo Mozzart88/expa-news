@@ -1,0 +1,30 @@
+{
+    "admins": [
+        291882118
+    ],
+    "editors": [],
+    "feeds": {
+        "7815c4a3-85de-41e4-93a0-b5604c5139d2": {
+            "id": "4d74f1f5-b88e-4481-9243-b73dda2ba0cb",
+            "publisher_name": "La Politica",
+            "rss": "https://www.lapoliticaonline.com/files/rss/ultimasnoticias.xml",
+            "last_access": 1733078732044,
+            "last_build": 0,
+            "channels": [
+                "@expat_news"
+            ],
+            "thread_id": "thread_qaCHOQsfa4bDlRSCGU6eRqt1"
+        },
+        "8dec6753-8517-46af-b23d-7bbf3f9608ae": {
+            "id": "9107f71d-c6c1-453a-b3fb-0bddc4dcee45",
+            "publisher_name": "Pagina12",
+            "rss": "https://www.pagina12.com.ar/rss/portada",
+            "last_access": 1733078732337,
+            "last_build": 0,
+            "channels": [
+                "@expat_news"
+            ],
+            "thread_id": "thread_CQ35Exl1edR0vf39L0gScVCe"
+        }
+    }
+}
