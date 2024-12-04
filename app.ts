@@ -52,7 +52,7 @@ async function translateAndSend(feed: Feed, note: FeedItem) {
 async function handler(feed: Feed) {
     data.feeds[feed.id] = feed.toJSON()
     Persistence.instance.save(data)
-    console.error(`New notes on ${feed.publisher}: ${feed.length}`)
+    log(`New notes on ${feed.publisher}: ${feed.length}`)
     for(const note of feed) {
         try {
             await translateAndSend(feed, note)
