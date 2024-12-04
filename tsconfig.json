@@ -11,5 +11,6 @@
         "strictFunctionTypes": true,
         "moduleResolution": "nodenext",
         "target": "ESNext"
-    }
+    },
+    "exclude": ["tests/**", "build/**"]
 }

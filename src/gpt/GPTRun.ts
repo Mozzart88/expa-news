@@ -1,3 +1,8 @@
+import { GPTAssistantId } from "./GPTAssistant.js"
+import GPTClient, { AnyJson } from "./GPTClient.js"
+import { GPTRole } from "./GPTMessage.js"
+import { GPTThreadId } from "./GPTThread.js"
+
 const RunStates = [
     'queued',
     'in_progress',
@@ -9,28 +14,30 @@ const RunStates = [
     'incomplete',
     'expired'    
 ] as const
-export type RunStatus = typeof RunStates[number]
+export type GPTRunStatus = typeof RunStates[number]
 
 const RunErrors = [
     'server_error',
     'rate_limit_exceeded',
     'invalid_prompt'
 ] as const
-export type RunError = (typeof RunErrors)[keyof typeof RunErrors]
+export type GPTRunError = (typeof RunErrors)[keyof typeof RunErrors]
+
+export type GPTRunId = `run_${string}`
 
 export type GPTRunType = {
-    id: string,
-    object: string,
+    id: GPTRunId,
+    object: "thread.run",
     created_at?: number,
-    assistant_id: string,
-    thread_id: string,
-    status: RunStatus,
+    assistant_id: GPTAssistantId,
+    thread_id: GPTThreadId,
+    status: GPTRunStatus,
     started_at?: number,
     expires_at?: number,
     cancelled_at?: number,
     failed_at?: number,
     completed_at?: number,
-    last_error?: RunError,
+    last_error?: GPTRunError,
     model: string,
     instructions?: string,
     tools: {[key: string | symbol]: string}[],
@@ -47,51 +54,98 @@ export type GPTRunType = {
     parallel_tool_calls: boolean
 }
 
-type CreateOptions = {
-    threadId: string,
+export type GPTRunOptions = {
+    threadId: GPTThreadId
     data: {
+        assistant_id: GPTAssistantId
         additional_messages: [
             {
-                role: 'user' | 'assistant',
+                role: GPTRole
                 content: string
             }
         ]
     }
 }
 
-class GPTRun {
+export default class GPTRun {
+    private readonly createOptions: GPTRunOptions
     private data: GPTRunType
-    private updateInterval: number
-    private handlers: {[key in  RunStatus]: Array<() => void>}
+    private updateInterval: number = 1000
 
-    public static async create(opts?: CreateOptions): Promise<GPTRun> {
-        const data = await GPTRun.createRun(opts)
-        return new GPTRun(data)
+    public get id(): GPTRunId {
+        return this.data.id
     }
 
-    private static async createRun(opts?: CreateOptions): Promise<GPTRunType> {
-        const data =  await GPTRun.sendRequest()       
+    constructor (assistant: GPTAssistantId, thread: GPTThreadId, content: string) {
+        this.createOptions = {
+            threadId: thread,
+            data: {
+                assistant_id: assistant,
+                additional_messages: [
+                    {
+                        role: 'user',
+                        content
+                    }
+                ]
+            }
+        }
+    }
+
+    public async waitForCompletion(): Promise<GPTRun> {
+        this.data = await this.create()
         return new Promise((resolve, reject) => {
+            const interval = setInterval(async () => {
+                this.data = await this.getRemoteState()
+                const status = this.data.status
+                switch (status) {
+                    case 'cancelled':
+                    case 'cancelling':
+                    case 'expired':
+                    case 'requires_action':
+                    case 'failed':
+                    case 'incomplete':
+                        clearInterval(interval)
+                        console.error(status, this)
+                        reject(new Error(`GPT Run fails with status: ${status} => ${this}`))
+                    case 'completed':
+                        clearInterval(interval)
+                        resolve(this)
+                }
+            }, this.updateInterval)
 
         })
     }
 
-    private static async sendRequest(): Promise<string> {
-        return new Promise((resolve, reject) => {
-
-        })
+    
+    public toString(): string {
+        return JSON.stringify(this.data)
     }
     
-    private constructor(data: GPTRunType) {
-        this.data = data
+    public toJSON(): GPTRunType | never {
+        if (this.data) 
+            return this.data
+        throw new Error(`GPT Run: no data yet`)
+    }
+    
+    private async getRemoteState(): Promise<GPTRunType> {
+        return await this.sendRequest('get', undefined, [this.data!.id])
     }
 
-    private async run() {
+    private async create(): Promise<GPTRunType> {
+        return await this.sendRequest('post', this.createOptions.data)
+    }    
 
+    private async sendRequest(
+        method: 'get' | 'post',
+        data?: AnyJson,
+        pathParams?: string[]
+    ): Promise<GPTRunType> {
+        const rootPath = `threads/${this.createOptions.threadId}/runs`.split('/')
+        const path = rootPath.concat(pathParams ?? [])
+        return await GPTClient.sendRequest({
+            path,
+            method,
+            data
+        })
     }
-
-    public async on(event: RunStatus, handler: Function): Promise<any> {
-        
-    }
-
 }

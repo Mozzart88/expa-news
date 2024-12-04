@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch via NPM",
+            "name": "Launch tests",
             "request": "launch",
             "runtimeArgs": [
                 "run-script",
@@ -22,7 +22,8 @@
             "request": "launch",
             "name": "Launch Program",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "tests/**"
             ],
             "program": "${workspaceFolder}/app.ts",
             "preLaunchTask": "tsc: build - tsconfig.json",
