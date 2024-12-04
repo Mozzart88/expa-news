@@ -47,6 +47,12 @@ async function translateAndSend(feed: Feed, note: FeedItem) {
     for(const channel of  feed.channels) {
         tgBot.sendMessage(channel, msg)
     }
+    const users = data.admins.concat(data.editors).toSorted().filter((val, index, arr) => {
+        return !(arr.indexOf(val) > index)
+    })
+    for(const user of  users) {
+        tgBot.sendMessage(user, msg)
+    }
 }
 
 async function handler(feed: Feed) {
