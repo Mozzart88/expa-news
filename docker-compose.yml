@@ -22,3 +22,7 @@ services:
     environment:
       OPENAI_KEY: $OPENAI_KEY
       TG_BOT_KEY: $TG_BOT_KEY
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: 'json-file'

@@ -1,8 +1,8 @@
 import https from 'node:https'
 import FeedItem from "./FeedItem.js"
 import { randomUUID, UUID } from 'node:crypto'
+import { GPTThreadId } from '../gpt/GPTThread.js'
 
-type GPTThreadType = `thread_${string}`
 
 export type FeedOptions = {
     id?: UUID
@@ -11,7 +11,8 @@ export type FeedOptions = {
     last_access: number
     last_build: number
     channels: string[]
-    thread_id: GPTThreadType
+    thread_id: GPTThreadId,
+    ttl?: number
 }
 
 export default class Feed implements Iterable<FeedItem> {
@@ -22,8 +23,8 @@ export default class Feed implements Iterable<FeedItem> {
     private _lastUpdate: number = 0
     private _lastBuild: number = 0
     private _channels: string[]
-    private _threadId: GPTThreadType
-    private _ttl: number = 15
+    private _threadId: GPTThreadId
+    private _ttl: number
     private _feed: FeedItem[] = []
 
     constructor (config: FeedOptions) {
@@ -34,6 +35,7 @@ export default class Feed implements Iterable<FeedItem> {
         this._lastBuild = config.last_build
         this._channels = config.channels
         this._threadId = config.thread_id
+        this._ttl = config.ttl ?? 15
     }
 
     public [Symbol.iterator](): Iterator<FeedItem> {
@@ -78,7 +80,7 @@ export default class Feed implements Iterable<FeedItem> {
         return this._channels
     }
 
-    public get thread(): GPTThreadType {
+    public get thread(): GPTThreadId {
         return this._threadId
     }
 
@@ -97,9 +99,9 @@ export default class Feed implements Iterable<FeedItem> {
     }
 
     public autoUpdate(handler: (feed: Feed) => void): NodeJS.Timeout {
+        this.update(handler)
         return setInterval(() => {
             this.update(handler)
-            .catch(err => {throw err})
         }, this._ttl * 60 * 1000)
     }
 
@@ -111,7 +113,8 @@ export default class Feed implements Iterable<FeedItem> {
             last_access: this._lastUpdate,
             last_build: this._lastBuild,
             channels: this._channels,
-            thread_id: this._threadId
+            thread_id: this._threadId,
+            ttl: this._ttl
         }
     }
 
@@ -165,6 +168,7 @@ export default class Feed implements Iterable<FeedItem> {
                     console.error('fail to create FeedItem: ', err)
                 }
             }
+            this._lastBuild = lastBuild
         }
         const ttlValue = data.match(/<ttl>([\d]+)<\/ttl>/)
         const ttl = ttlValue ? parseInt(ttlValue[1]) : 15
