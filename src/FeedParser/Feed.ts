@@ -166,7 +166,7 @@ export default class Feed implements Iterable<FeedItem> {
             for (const raw of itemsRaw) {
                 try {
                     const newItem = new FeedItem(raw[0])
-                    if (feed.find((item) => item.id.value == newItem.id.value) === undefined)
+                    if (newItem.timestamp > this._lastUpdate && feed.find((item) => item.id.value == newItem.id.value) === undefined)
                         feed.push(newItem)
                 } catch (err) {
                     console.error(`Fail to create FeedItem on ${this._publisher}: ${err.message}`)
