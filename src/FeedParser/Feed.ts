@@ -88,7 +88,9 @@ export default class Feed implements Iterable<FeedItem> {
         const data = await this.getData(this._url)
         const {ttl, feed} = this.parse(data)
         this._feed = feed.filter((item) => {
-            if (item.timestamp > this._lastUpdate)
+            if (this._feed.find((feedItem) => {
+                return feedItem.id.value == item.id.value
+            }) === undefined)
                 return item
         })
         this._ttl = ttl
@@ -163,9 +165,11 @@ export default class Feed implements Iterable<FeedItem> {
             const itemsRaw = data.matchAll(/<item>.*?<\/item>/gs)
             for (const raw of itemsRaw) {
                 try {
-                    feed.push(new FeedItem(raw[0]))
+                    const newItem = new FeedItem(raw[0])
+                    if (feed.find((item) => item.id.value == newItem.id.value) === undefined)
+                        feed.push(newItem)
                 } catch (err) {
-                    console.error('fail to create FeedItem: ', err)
+                    console.error(`Fail to create FeedItem on ${this._publisher}: ${err.message}`)
                 }
             }
             this._lastBuild = lastBuild

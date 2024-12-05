@@ -24,13 +24,13 @@ function log(msg: string) {
     console.log(`${new Date().toUTCString()}: ${msg}`)
 }
 
-function mkMsg(translate: TranslateResponse, note: FeedItemJson): string {
+function mkMsg(translate: TranslateResponse, note: FeedItemJson, publisher: string): string {
     const categories = translate.categories.map((cat) => cat.replace(' ', '-'))
     return `*${translate.title}*
     
 ${translate.content}
 
-[Ссылка на публикацию](${note.link})
+[${publisher}](${note.link})
 
 ${ categories.length > 0 ? `#${categories.join(' #')}` : ''}
     `
@@ -43,9 +43,13 @@ async function translateAndSend(feed: Feed, note: FeedItem) {
         throw new Error(`Empty requeired content in note: ${jsont}`)
     }
     const translate = await gpt.translate(feed.thread, JSON.stringify(jsont))
-    const msg = mkMsg(translate, jsont)
+    const msg = mkMsg(translate, jsont, feed.publisher) + `\n_${new Date(note.timestamp).toLocaleString()}_`
     for(const channel of  feed.channels) {
         tgBot.sendMessage(channel, msg)
+    }
+    const users = new Set(data.admins.concat(data.editors))
+    for(const user of  users) {
+        tgBot.sendMessage(user, msg)
     }
 }
 
@@ -75,8 +79,6 @@ const gpt = new GPTAssistatn(
 )
 
 const tgBot = new TGBot(apiKeys.tg!)
-
-
 
 for(const id in data.feeds) {
     const feedConfig: FeedOptions = data.feeds[id]

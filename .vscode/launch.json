@@ -18,6 +18,20 @@
             "type": "node"
         },
         {
+            "name": "Launch tests script",
+            "request": "launch",
+            "runtimeArgs": [
+                "tsx",
+                "--test",
+                "${file}"
+            ],
+            "runtimeExecutable": "npx",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node"
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",

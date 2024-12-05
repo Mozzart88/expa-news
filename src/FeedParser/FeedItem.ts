@@ -50,7 +50,18 @@ export default class FeedItem {
         return this._enclosure
     }
 
-    public toString(): string {
+    public toString(debug?: boolean): string {
+        if (debug) {
+            return JSON.stringify({
+                title: this._title,
+                link: this._link,
+                id: this._id,
+                timestamp: this._timestamp,
+                description: this._description,
+                content: this._content,
+                enclosure: this._enclosure,
+                })
+        }
         return `${this.title} at ${this.timestamp}\n${this.link}\n${this.description ?? ''}\n\n${this.content ?? ''}`
     }
 
@@ -75,7 +86,7 @@ export default class FeedItem {
     }
 
     private setTitle(data: string) {
-        const pattern = /<title>(.+?)<\/title>/
+        const pattern = /<title>(.+?)<\/title>/s
         const res = data.match(pattern)
 
         if (!res || res.length !== 2 || res[1].length === 0) {
@@ -85,17 +96,17 @@ export default class FeedItem {
     }
 
     private setLink(data: string) {
-        const pattern = /<link>(.+?)<\/link>/
+        const pattern = /<link>(.+?)<\/link>/s
         const res = data.match(pattern)
 
         if (!res || res.length !== 2 || res[1].length === 0) {
             throw new Error('Link is mandatory')
         }
-        this._link = new URL(res[1])
+        this._link = new URL(res[1].trim())
     }
 
     private setGUID(data: string) {
-        const pattern = /<guid[a-zA-Z "=-_]*>.+?<\/guid>/
+        const pattern = /<guid[a-zA-Z "=-_]*>.+?<\/guid>/s
         const res = data.match(pattern)
 
         if (!res || res[0].length === 0) {
@@ -105,7 +116,7 @@ export default class FeedItem {
     }
 
     private setDate(data: string) {
-        const pattern = /<pubdate>(.*?)<\/pubdate>/i
+        const pattern = /<pubdate>(.*?)<\/pubdate>/si
         const res = data.match(pattern)
 
         if (!res || res.length !== 2) {
@@ -120,7 +131,7 @@ export default class FeedItem {
     }
 
     private setDescription(data: string) {
-        const pattern = /<description>(.*?)<\/description>/
+        const pattern = /<description>(.*?)<\/description>/s
         const res = data.match(pattern)
 
         if (res && res[1] !== undefined) {
@@ -129,7 +140,7 @@ export default class FeedItem {
     }
     
     private setContent(data: string) {
-        const pattern = /<content[\s\w\d:]*?>(.*?)<\/content[\s\w\d:]*?>/
+        const pattern = /<content[\s\w\d:]*?>(.*?)<\/content[\s\w\d:]*?>/s
         const res = data.match(pattern)
     
         if (res && res.length == 2 && res[1]) {
@@ -138,7 +149,7 @@ export default class FeedItem {
     }
 
     private setEnclosure(data: string) {
-        const pattern = /<enclosure(.*?)\/[\s]*>/
+        const pattern = /<enclosure(.*?)\/[\s]*>/s
         const res = data.match(pattern)
     
         if (res && res.length == 2 && res[1]) {

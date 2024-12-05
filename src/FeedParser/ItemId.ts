@@ -33,7 +33,7 @@ export default class ItemId {
     }
 
     private setValue(data: string) {
-        const pattern = />(.*?)<\//
+        const pattern = />(.*?)<\//s
         const res = data.match(pattern)
 
         if (!res || res.length !== 2 || res[1].length === 0) {
