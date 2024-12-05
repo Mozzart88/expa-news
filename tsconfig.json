@@ -12,5 +12,6 @@
         "moduleResolution": "nodenext",
         "target": "ESNext"
     },
-    "exclude": ["tests/**", "build/**"]
+    "exclude": ["tests/**", "build/**"],
+    "include": ["app.ts", "src/**.ts"]
 }

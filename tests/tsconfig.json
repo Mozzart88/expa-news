@@ -1,5 +1,5 @@
 {
     "extends": [".."],
-    "include": ["."],
+    "include": [".", "../app.ts", "../src/**.ts"],
     "exclude": ["*.js"]
 }
